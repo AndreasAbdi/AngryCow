@@ -39,7 +39,7 @@ public class MapGenerator : MonoBehaviour {
         GenerateMap();
 	}
 
-    void GenerateMap()
+    public void GenerateMap()
     {
         ClearTilePool();
         CreateMap();
@@ -65,9 +65,9 @@ public class MapGenerator : MonoBehaviour {
 
     void ClearTilePool()
     {
-        while (tilePool.childCount > 0)
+        while (tilePool.childCount != 0)
         {
-            DestroyImmediate(tilePool.GetChild(0));
+            DestroyImmediate(tilePool.GetChild(0).gameObject);
         }
     }
 }
