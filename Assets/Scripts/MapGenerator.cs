@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 [System.Serializable]
@@ -31,9 +32,13 @@ public class Coord
 }
 
 public class MapGenerator : MonoBehaviour {
+    [Range(0,100)]
+    public int obstacleCount;
+    public Transform obstaclePrefab;
     public Map map;
     public Transform mapTile;
-    public Transform tilePool;
+    public Transform objectPool;
+
 
     void Start () {
         GenerateMap();
@@ -43,7 +48,40 @@ public class MapGenerator : MonoBehaviour {
     {
         ClearTilePool();
         CreateMap();
+        CreateObstacles();
     }
+
+    void CreateObstacles()
+    {
+        Coord[] coords = (
+        from x in Enumerable.Range(0, map.width)
+        from y in Enumerable.Range(0, map.height)
+        select new Coord(x, y)
+        ).ToArray();
+
+        Queue<Coord> shuffledCoords = new Queue<Coord>(Utility.ShuffleArray(coords, map.seed.GetHashCode()));
+
+        Enumerable
+            .Range(0, obstacleCount)
+            .Select(
+                (obstacleNumber) =>{
+                    Coord nextCoord = shuffledCoords.Dequeue();
+                    shuffledCoords.Enqueue(nextCoord);
+                    return nextCoord;
+            }).Select(
+                (coord) =>
+                {
+                    return new Vector3(-map.width / 2 + 0.5f + coord.x, 0, -map.height / 2 + 0.5f + coord.y);
+                }
+            )
+            .ToList()
+            .ForEach(
+                (position) => {
+                    Transform obstacle = Instantiate(obstaclePrefab, position + Vector3.up * 0.5f, Quaternion.identity) as Transform;
+                    obstacle.parent = objectPool;
+            });
+    }
+    
 
     void CreateMap()
     {
@@ -59,15 +97,15 @@ public class MapGenerator : MonoBehaviour {
         .ForEach(tile => {
             Transform tileTransform = tile.GetComponent<Transform>();
             tileTransform.localScale = Vector3.one * (1 - map.outlineSize);
-            tileTransform.SetParent(tilePool);
+            tileTransform.SetParent(objectPool);
         });
     }
 
     void ClearTilePool()
     {
-        while (tilePool.childCount != 0)
+        while (objectPool.childCount != 0)
         {
-            DestroyImmediate(tilePool.GetChild(0).gameObject);
+            DestroyImmediate(objectPool.GetChild(0).gameObject);
         }
     }
 }
