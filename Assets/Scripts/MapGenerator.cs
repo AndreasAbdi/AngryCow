@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
+using System.Linq;
 
 [System.Serializable]
 public class Map
@@ -8,9 +10,10 @@ public class Map
     public int height;
     [Range(1, 100)]
     public int width;
-    public GameObject mapTile;
-    public Coord CenterLocation;
+    [Range(0, 1)]
+    public float outlineSize;
 
+    public Coord centerLocation;
     public string seed;
 }
 
@@ -19,18 +22,39 @@ public class Coord
 {
     public int x;
     public int y;
+
+    public Coord(int _x, int _y)
+    {
+        x = _x;
+        y = _y;
+    }
 }
 
 public class MapGenerator : MonoBehaviour {
     public Map map;
+    public Transform mapTile;
+    public Transform tilePool;
 
-	// Use this for initialization
-	void Start () {
-	
+    void Start () {
+        GenerateMap();
 	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+
+    void GenerateMap()
+    {
+        (
+        from x in Enumerable.Range(0, map.width)
+        from y in Enumerable.Range(0, map.height)
+        select new Coord(x, y)
+        )
+        .ToList()
+        .ForEach(mapCoord => {
+            Vector3 tilePosition = new Vector3(-map.width/2 + 0.5f + mapCoord.x, 0, -map.height/2 + 0.5f + mapCoord.y);
+            GameObject newTile = Instantiate(mapTile, tilePosition, Quaternion.identity) as GameObject;
+            Transform tileTransform = newTile.GetComponent<Transform>();
+            tileTransform.localScale = Vector3.one * (1 - map.outlineSize);
+            tileTransform.SetParent(tilePool);
+        });
+
+       
+    }
 }
