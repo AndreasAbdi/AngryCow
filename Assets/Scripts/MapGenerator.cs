@@ -13,7 +13,7 @@ public class Map
     public int width;
     [Range(0, 1)]
     public float outlineSize;
-
+    [HideInInspector]
     public Coord centerLocation;
     public string seed;
 }
@@ -29,11 +29,21 @@ public class Coord
         x = _x;
         y = _y;
     }
+
+    public static bool operator==(Coord c1, Coord c2)
+    {
+        return c1.x == c2.x && c1.y == c2.y;
+    }
+
+    public static bool operator!=(Coord c1, Coord c2)
+    {
+        return !(c1 == c2);
+    }
 }
 
 public class MapGenerator : MonoBehaviour {
-    [Range(0,100)]
-    public int obstacleCount;
+    [Range(0,1)]
+    public float obstaclePercent;
     public Transform obstaclePrefab;
     public Map map;
     public Transform mapTile;
@@ -60,28 +70,82 @@ public class MapGenerator : MonoBehaviour {
         ).ToArray();
 
         Queue<Coord> shuffledCoords = new Queue<Coord>(Utility.ShuffleArray(coords, map.seed.GetHashCode()));
+        bool[,] obstacleMap = new bool[map.width, map.height];
+        map.centerLocation = new Coord(map.width / 2, map.height / 2);
 
+        int obstacleCount = (int) (map.width * map.height * obstaclePercent);
+        int currentObstacleCount = 0;
         Enumerable
             .Range(0, obstacleCount)
             .Select(
                 (obstacleNumber) =>{
-                    Coord nextCoord = shuffledCoords.Dequeue();
-                    shuffledCoords.Enqueue(nextCoord);
-                    return nextCoord;
-            }).Select(
-                (coord) =>
-                {
-                    return new Vector3(-map.width / 2 + 0.5f + coord.x, 0, -map.height / 2 + 0.5f + coord.y);
-                }
-            )
+                Coord nextCoord = shuffledCoords.Dequeue();
+                shuffledCoords.Enqueue(nextCoord);
+                return nextCoord;
+            })
             .ToList()
             .ForEach(
                 (position) => {
-                    Transform obstacle = Instantiate(obstaclePrefab, position + Vector3.up * 0.5f, Quaternion.identity) as Transform;
+                currentObstacleCount++;
+                obstacleMap[position.x, position.y] = true;
+                if(position != map.centerLocation && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
+                {
+                    Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + Vector3.up * 0.5f, Quaternion.identity) as Transform;
                     obstacle.parent = objectPool;
+                } else
+                {
+                    obstacleMap[position.x, position.y] = false;
+                    currentObstacleCount--;
+                }
             });
     }
     
+    Vector3 CoordToVector3(Coord coord)
+    {
+        return new Vector3(-map.width / 2 + 0.5f + coord.x, 0, -map.height / 2 + 0.5f + coord.y);
+
+    }
+
+    bool MapIsFullyAccessible(bool[,] obstacleMap, int currentObstacleCount)
+    {
+        bool[,] mapFlags = new bool[obstacleMap.GetLength(0), obstacleMap.GetLength(1)];
+        Queue<Coord> queue = new Queue<Coord>();
+        queue.Enqueue(map.centerLocation);
+        mapFlags[map.centerLocation.x, map.centerLocation.y] = true;
+
+        int accessibleTileCount = 1;
+
+        while (queue.Count > 0)
+        {
+            Coord tile = queue.Dequeue();
+            (
+            //generate all neighbors of tile
+            from x in Enumerable.Range(-1, 3)
+            from y in Enumerable.Range(-1, 3)
+            select new Coord(x + tile.x, y + tile.y)
+            ).Where((neighbor) =>
+            //only vertical/horizontal neighbors
+                neighbor.x == tile.x || neighbor.y == tile.y
+            ).Where((neighbor) =>
+            //not crossing the map borders in x
+                neighbor.x >= 0 && neighbor.x < obstacleMap.GetLength(0)
+            ).Where((neighbor) =>
+            //not crossing the map borders in y
+                neighbor.y >= 0 && neighbor.y < obstacleMap.GetLength(1)
+            ).Where((neighbor) =>
+            //has yet to be marked
+                !mapFlags[neighbor.x, neighbor.y] && !obstacleMap[neighbor.x, neighbor.y]
+            ).ToList()
+            .ForEach((neighbor) => {
+                mapFlags[neighbor.x, neighbor.y] = true;
+                queue.Enqueue(neighbor);
+                accessibleTileCount++;
+            });
+        }
+
+        int targetAccessibleTileCount = (int)(map.width * map.height - currentObstacleCount);
+        return targetAccessibleTileCount == accessibleTileCount;
+    }
 
     void CreateMap()
     {
