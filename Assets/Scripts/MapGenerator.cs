@@ -46,6 +46,7 @@ public class MapGenerator : MonoBehaviour {
     public float obstaclePercent;
     public Transform obstaclePrefab;
     public Map map;
+    public float tileSize;
     public Transform mapTile;
     public Transform objectPool;
 
@@ -90,9 +91,11 @@ public class MapGenerator : MonoBehaviour {
                 obstacleMap[position.x, position.y] = true;
                 if(position != map.centerLocation && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
                 {
-                    Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + Vector3.up * 0.5f, Quaternion.identity) as Transform;
+                    Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + Vector3.up *tileSize* 0.5f, Quaternion.identity) as Transform;
                     obstacle.parent = objectPool;
-                } else
+                    obstacle.localScale = Vector3.one * (1 - map.outlineSize) * tileSize;
+                }
+                    else
                 {
                     obstacleMap[position.x, position.y] = false;
                     currentObstacleCount--;
@@ -102,8 +105,7 @@ public class MapGenerator : MonoBehaviour {
     
     Vector3 CoordToVector3(Coord coord)
     {
-        return new Vector3(-map.width / 2 + 0.5f + coord.x, 0, -map.height / 2 + 0.5f + coord.y);
-
+        return new Vector3(-map.width / 2 + 0.5f + coord.x, 0, -map.height / 2 + 0.5f + coord.y) * tileSize;
     }
 
     bool MapIsFullyAccessible(bool[,] obstacleMap, int currentObstacleCount)
@@ -155,12 +157,12 @@ public class MapGenerator : MonoBehaviour {
         select new Coord(x, y)
         ).ToList()
         .Select(mapCoord => {
-            Vector3 tilePosition = new Vector3(-map.width / 2 + 0.5f + mapCoord.x, 0, -map.height / 2 + 0.5f + mapCoord.y);
+            Vector3 tilePosition = CoordToVector3(mapCoord);
             return Instantiate(mapTile, tilePosition, Quaternion.identity) as GameObject;
         }).ToList()
         .ForEach(tile => {
             Transform tileTransform = tile.GetComponent<Transform>();
-            tileTransform.localScale = Vector3.one * (1 - map.outlineSize);
+            tileTransform.localScale = Vector3.one * (1 - map.outlineSize) * tileSize;
             tileTransform.SetParent(objectPool);
         });
     }
