@@ -91,9 +91,11 @@ public class MapGenerator : MonoBehaviour {
                 obstacleMap[position.x, position.y] = true;
                 if(position != map.centerLocation && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
                 {
-                    Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + Vector3.up *tileSize* 0.5f, Quaternion.identity) as Transform;
+                    float targetScale =  (1 - map.outlineSize) * tileSize;
+                    Vector3 upShift = Vector3.up * targetScale * 0.5f;
+                    Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + upShift, Quaternion.identity) as Transform;
                     obstacle.parent = objectPool;
-                    obstacle.localScale = Vector3.one * (1 - map.outlineSize) * tileSize;
+                    obstacle.localScale = Vector3.one * targetScale;
                 }
                     else
                 {
