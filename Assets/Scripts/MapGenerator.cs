@@ -20,8 +20,8 @@ public class Map
 
     public float minObstacleHeight;
     public float maxObstacleHeight;
-    public float foregroundColor;
-    public float backgroundColor;
+    public Color foregroundColor;
+    public Color backgroundColor;
 
     public string seed;
 
@@ -107,6 +107,8 @@ public class MapGenerator : MonoBehaviour {
 
     void CreateObstacles()
     {
+        System.Random pseudoRandom = new System.Random(map.seed.GetHashCode());
+
         Coord[] coords = (
         from x in Enumerable.Range(0, map.width)
         from y in Enumerable.Range(0, map.height)
@@ -135,10 +137,21 @@ public class MapGenerator : MonoBehaviour {
                     if (position != map.centerLocation && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
                     {
                         float targetScale = (1 - map.outlineSize) * tileSize;
-                        Vector3 upShift = Vector3.up * targetScale * 0.5f;
+                        float obstacleHeight = Mathf.Lerp(map.minObstacleHeight, map.maxObstacleHeight, (float)pseudoRandom.NextDouble());
+                        Vector3 upShift = Vector3.up * targetScale * obstacleHeight / 2f;
+
                         Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + upShift, Quaternion.identity) as Transform;
                         obstacle.parent = objectPool;
-                        obstacle.localScale = Vector3.one * targetScale;
+                        obstacle.localScale = new Vector3(targetScale, targetScale* obstacleHeight ,targetScale);
+
+                        Renderer obstacleRenderer = obstacle.GetComponentInChildren<Renderer>();
+                        Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
+                        
+                        //Renderer obstacleRenderer = obstacle.GetComponent<Renderer>();
+                        //Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
+                        float colourPercent = position.y / (float)map.height;
+                        obstacleMaterial.color = Color.Lerp(map.foregroundColor, map.backgroundColor, colourPercent);
+                        obstacleRenderer.sharedMaterial = obstacleMaterial;
                     }
                     else
                     {
@@ -151,11 +164,11 @@ public class MapGenerator : MonoBehaviour {
     void UpdateNavMesh()
     {
         navMeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;
-        float positionScale = 1/(4 * tileSize);
+        float positionScale = 1/(4f * tileSize);
         float verticalPositionScale = (map.width + maxMapSize.x) * positionScale;
         float horizontalPositionScale = (map.height + maxMapSize.y) * positionScale;
-        Vector3 partialLocalScale = new Vector3((maxMapSize.x - map.width) / 2, 1, map.height) * tileSize;
-        Vector3 fillingLocalScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.height) / 2) * tileSize;
+        Vector3 partialLocalScale = new Vector3((maxMapSize.x - map.width) / 2f, 1, map.height) * tileSize;
+        Vector3 fillingLocalScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.height) / 2f) * tileSize;
         //left 
         CreateNavMeshMask(Vector3.left * verticalPositionScale, partialLocalScale);
         //right
@@ -164,6 +177,14 @@ public class MapGenerator : MonoBehaviour {
         CreateNavMeshMask(Vector3.forward * horizontalPositionScale, fillingLocalScale);
         //bottom
         CreateNavMeshMask(Vector3.back * horizontalPositionScale, fillingLocalScale);
+    }
+
+    void ClearTilePool()
+    {
+        while (objectPool.childCount != 0)
+        {
+            DestroyImmediate(objectPool.GetChild(0).gameObject);
+        }
     }
 
     void CreateNavMeshMask(Vector3 position, Vector3 localScale)
@@ -175,7 +196,7 @@ public class MapGenerator : MonoBehaviour {
     
     Vector3 CoordToVector3(Coord coord)
     {
-        return new Vector3(-map.width / 2 + 0.5f + coord.x, 0, -map.height / 2 + 0.5f + coord.y) * tileSize;
+        return new Vector3(-map.width / 2f + 0.5f + coord.x, 0, -map.height / 2f + 0.5f + coord.y) * tileSize;
     }
 
     bool MapIsFullyAccessible(bool[,] obstacleMap, int currentObstacleCount)
@@ -219,11 +240,4 @@ public class MapGenerator : MonoBehaviour {
         return targetAccessibleTileCount == accessibleTileCount;
     }
 
-    void ClearTilePool()
-    {
-        while (objectPool.childCount != 0)
-        {
-            DestroyImmediate(objectPool.GetChild(0).gameObject);
-        }
-    }
 }
