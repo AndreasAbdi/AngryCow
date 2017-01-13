@@ -55,17 +55,22 @@ public class Coord
 public class MapGenerator : MonoBehaviour {
     public Map[] maps;
     public int currentMapIndex;
+    [Range(0.001f, 100)]
+    public float tileSize;
+    //needs to be greater than all the current maps for nav meshes to work
+    public Vector2 maxMapSize;
 
     public Transform obstaclePrefab;
     public Transform mapTile;
     public Transform objectPool;
-    [Range(0.001f, 100)]
-    public float tileSize;
 
     //for controlling the navigation mesh. 
     public Transform navMeshFloor;
     public Transform navMeshMaskPrefab;
-    public Vector2 maxMapSize;
+
+
+    //for the ground
+    public BoxCollider floor;
 
     Map map;
 
@@ -77,6 +82,7 @@ public class MapGenerator : MonoBehaviour {
     {
         SetCurrentMap();
         ClearTilePool();
+        SetupFloor();
         CreateMap();
         CreateObstacles();
         UpdateNavMesh();
@@ -87,6 +93,11 @@ public class MapGenerator : MonoBehaviour {
         map = maps[currentMapIndex];
     }
 
+    void SetupFloor()
+    {
+        floor.center = new Vector3(0, -0.25f, 0);
+        floor.size = new Vector3(map.width * tileSize, 0.5f, map.height * tileSize);
+    }
     void CreateMap()
     {
         (
