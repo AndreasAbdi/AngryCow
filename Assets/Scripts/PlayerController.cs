@@ -6,7 +6,7 @@ public class PlayerController : MonoBehaviour {
     public float speed;
 
     Vector3 movementInput;
-
+    
 	void OnEnable()
     {
         movementInput = new Vector3();
@@ -19,11 +19,23 @@ public class PlayerController : MonoBehaviour {
 
     void FixedUpdate()
     {
-        Move();
+        Vector3 targetPosition = GetTargetPosition();
+        Move(targetPosition);
+        Rotate(targetPosition);
     }
 
-    void Move()
+    Vector3 GetTargetPosition()
     {
-        playerCharacter.MovePosition(transform.position + movementInput * speed);
+        return transform.position + movementInput * speed * Time.deltaTime;
+    }
+
+    void Move(Vector3 targetPosition)
+    {
+        playerCharacter.MovePosition(targetPosition);
+    }
+
+    void Rotate(Vector3 targetPosition)
+    {
+        transform.LookAt(targetPosition);
     }
 }

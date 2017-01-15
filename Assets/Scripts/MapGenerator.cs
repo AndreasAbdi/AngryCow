@@ -73,6 +73,7 @@ public class MapGenerator : MonoBehaviour {
     public BoxCollider floor;
 
     Map map;
+    bool[,] obstacleMap;
 
     void Start () {
         GenerateMap();
@@ -88,9 +89,20 @@ public class MapGenerator : MonoBehaviour {
         UpdateNavMesh();
     }
 
+    public void SpawnAt(Vector3 position, Transform gameObject, float objectHeight)
+    {
+        Coord spawnTarget = Vector3ToCoord(position);
+        if(!obstacleMap[spawnTarget.x, spawnTarget.y])
+        {
+            SpawnObject(gameObject, spawnTarget, objectHeight);
+            obstacleMap[spawnTarget.x, spawnTarget.y] = true;
+        }
+    }
+
     void SetCurrentMap()
     {
         map = maps[currentMapIndex];
+        obstacleMap = new bool[map.width, map.height];
     }
 
     void SetupFloor()
@@ -98,6 +110,7 @@ public class MapGenerator : MonoBehaviour {
         floor.center = new Vector3(0, -0.25f, 0);
         floor.size = new Vector3(map.width * tileSize, 0.5f, map.height * tileSize);
     }
+
     void CreateMap()
     {
         (
@@ -127,7 +140,6 @@ public class MapGenerator : MonoBehaviour {
         ).ToArray();
 
         Queue<Coord> shuffledCoords = new Queue<Coord>(Utility.ShuffleArray(coords, map.seed.GetHashCode()));
-        bool[,] obstacleMap = new bool[map.width, map.height];
         map.centerLocation = new Coord(map.width / 2, map.height / 2);
 
         int obstacleCount = (int)(map.width * map.height * map.obstaclePercent);
@@ -144,32 +156,49 @@ public class MapGenerator : MonoBehaviour {
             .ForEach(
                 (position) => {
                     currentObstacleCount++;
-                    obstacleMap[position.x, position.y] = true;
-                    if (position != map.centerLocation && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
+                    if (!GenerateObstacle(position, (float)pseudoRandom.NextDouble(), currentObstacleCount))
                     {
-                        float targetScale = (1 - map.outlineSize) * tileSize;
-                        float obstacleHeight = Mathf.Lerp(map.minObstacleHeight, map.maxObstacleHeight, (float)pseudoRandom.NextDouble());
-                        Vector3 upShift = Vector3.up * targetScale * obstacleHeight / 2f;
-
-                        Transform obstacle = Instantiate(obstaclePrefab, CoordToVector3(position) + upShift, Quaternion.identity) as Transform;
-                        obstacle.parent = objectPool;
-                        obstacle.localScale = new Vector3(targetScale, targetScale* obstacleHeight ,targetScale);
-
-                        Renderer obstacleRenderer = obstacle.GetComponentInChildren<Renderer>();
-                        Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
-                        
-                        //Renderer obstacleRenderer = obstacle.GetComponent<Renderer>();
-                        //Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
-                        float colourPercent = position.y / (float)map.height;
-                        obstacleMaterial.color = Color.Lerp(map.foregroundColor, map.backgroundColor, colourPercent);
-                        obstacleRenderer.sharedMaterial = obstacleMaterial;
-                    }
-                    else
-                    {
-                        obstacleMap[position.x, position.y] = false;
                         currentObstacleCount--;
                     }
                 });
+    }
+
+    bool GenerateObstacle(Coord position, float randomValue, int currentObstacleCount)
+    {
+        obstacleMap[position.x, position.y] = true;
+        if (position != map.centerLocation && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
+        {
+            SpawnObstacle(position, randomValue);
+            return true;
+        }
+        obstacleMap[position.x, position.y] = false;
+        return false;
+    }
+
+    void SpawnObstacle(Coord position, float randomValue)
+    {
+        float obstacleHeight = Mathf.Lerp(map.minObstacleHeight, map.maxObstacleHeight, randomValue);
+
+        Transform obstacle = SpawnObject(obstaclePrefab, position, obstacleHeight);
+        Renderer obstacleRenderer = obstacle.GetComponentInChildren<Renderer>(); 
+        Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
+
+        float colourPercent = position.y / (float)map.height;
+        obstacleMaterial.color = Color.Lerp(map.foregroundColor, map.backgroundColor, colourPercent);
+        obstacleRenderer.sharedMaterial = obstacleMaterial;
+    }
+
+    Transform SpawnObject(Transform objectToSpawn, Coord position, float obstacleHeight)
+    {
+        float targetScale = (1 - map.outlineSize) * tileSize;
+
+        Vector3 upShift = Vector3.up * targetScale * obstacleHeight / 2f;
+
+        Transform gameObject = Instantiate(obstaclePrefab, CoordToVector3(position) + upShift, Quaternion.identity) as Transform;
+        gameObject.parent = objectPool;
+        gameObject.localScale = new Vector3(targetScale, targetScale * obstacleHeight, targetScale);
+
+        return gameObject;
     }
 
     void UpdateNavMesh()
@@ -208,6 +237,15 @@ public class MapGenerator : MonoBehaviour {
     Vector3 CoordToVector3(Coord coord)
     {
         return new Vector3(-map.width / 2f + 0.5f + coord.x, 0, -map.height / 2f + 0.5f + coord.y) * tileSize;
+    }
+
+    Coord Vector3ToCoord(Vector3 vector3)
+    {
+        int x = Mathf.RoundToInt(vector3.x / tileSize + (map.width - 1) / 2f);
+        int y = Mathf.RoundToInt(vector3.z / tileSize + (map.height - 1) / 2f);
+        x = Mathf.Clamp(x, 0, map.width - 1);
+        y = Mathf.Clamp(y, 0, map.height - 1);
+        return new Coord(x, y);
     }
 
     bool MapIsFullyAccessible(bool[,] obstacleMap, int currentObstacleCount)
