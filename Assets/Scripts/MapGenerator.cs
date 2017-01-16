@@ -61,7 +61,7 @@ public class MapGenerator : MonoBehaviour {
     public Vector2 maxMapSize;
 
     public Transform obstaclePrefab;
-    public Transform mapTile;
+    public GameObject mapTile;
     public Transform objectPool;
 
     //for controlling the navigation mesh. 
@@ -73,6 +73,7 @@ public class MapGenerator : MonoBehaviour {
     public BoxCollider floor;
 
     Map map;
+    //obstacles are 00 at top left, and nn at bottom right
     bool[,] obstacleMap;
 
     void Start () {
@@ -120,7 +121,7 @@ public class MapGenerator : MonoBehaviour {
         ).ToList()
         .Select(mapCoord => {
             Vector3 tilePosition = CoordToVector3(mapCoord);
-            return Instantiate(mapTile, tilePosition, Quaternion.identity) as GameObject;
+            return Instantiate(mapTile, tilePosition, Quaternion.identity);
         }).ToList()
         .ForEach(tile => {
             Transform tileTransform = tile.GetComponent<Transform>();
