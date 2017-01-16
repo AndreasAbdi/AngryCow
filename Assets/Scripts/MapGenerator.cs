@@ -100,6 +100,12 @@ public class MapGenerator : MonoBehaviour {
         }
     }
 
+    public void ClearPosition(Vector3 position)
+    {
+        Coord toClear = Vector3ToCoord(position);
+        obstacleMap[toClear.x, toClear.y] = false;
+    }
+
     void SetCurrentMap()
     {
         map = maps[currentMapIndex];
