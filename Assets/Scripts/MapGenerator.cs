@@ -195,7 +195,7 @@ public class MapGenerator : MonoBehaviour {
 
         Vector3 upShift = Vector3.up * targetScale * obstacleHeight / 2f;
 
-        Transform gameObject = Instantiate(obstaclePrefab, CoordToVector3(position) + upShift, Quaternion.identity) as Transform;
+        Transform gameObject = Instantiate(objectToSpawn, CoordToVector3(position) + upShift, Quaternion.identity) as Transform;
         gameObject.parent = objectPool;
         gameObject.localScale = new Vector3(targetScale, targetScale * obstacleHeight, targetScale);
 
