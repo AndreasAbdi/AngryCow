@@ -11,13 +11,11 @@ public class EnemyController : MonoBehaviour {
 
     void Start()
     {
+        player = GameObject.FindGameObjectWithTag("Player");
     }
 
     void FixedUpdate()
     {
         navMeshAgent.destination = player.transform.position;
-
-        //Vector3 movement = Vector3.left * speed * Time.deltaTime;
-        //rigidBody.MovePosition(transform.position + movement);
     }
 }

@@ -23,7 +23,7 @@ public class PlayerSkill : MonoBehaviour {
 
     void SpawnOnMap()
     {
-        mapGenerator.SpawnAt(GetTargetPosition(), defender, 1);
+        mapGenerator.SpawnAt(GetTargetPosition(), defender, 1, true);
     }
 
     void SpawnOnCoordinate()

@@ -90,20 +90,34 @@ public class MapGenerator : MonoBehaviour {
         UpdateNavMesh();
     }
 
-    public void SpawnAt(Vector3 position, Transform gameObject, float objectHeight)
+    public void SpawnAt(Coord spawnTarget, Transform gameObject, float objectHeight, bool blocking)
     {
-        Coord spawnTarget = Vector3ToCoord(position);
-        if(!obstacleMap[spawnTarget.x, spawnTarget.y])
+        if (!obstacleMap[spawnTarget.x, spawnTarget.y])
         {
             SpawnObject(gameObject, spawnTarget, objectHeight);
-            obstacleMap[spawnTarget.x, spawnTarget.y] = true;
+            obstacleMap[spawnTarget.x, spawnTarget.y] = true && blocking;
         }
+    }
+
+    public void SpawnAt(Vector3 spawnTarget, Transform gameObject, float objectHeight, bool blocking)
+    {
+        SpawnAt(Vector3ToCoord(spawnTarget), gameObject, objectHeight, blocking);
     }
 
     public void ClearPosition(Vector3 position)
     {
         Coord toClear = Vector3ToCoord(position);
         obstacleMap[toClear.x, toClear.y] = false;
+    }
+
+    public bool Blocked(Coord position)
+    {
+        return obstacleMap[position.x, position.y];
+    }
+
+    public Vector3 CoordToVector3(Coord coord)
+    {
+        return new Vector3(-map.width / 2f + 0.5f + coord.x, 0, -map.height / 2f + 0.5f + coord.y) * tileSize;
     }
 
     void SetCurrentMap()
@@ -239,11 +253,6 @@ public class MapGenerator : MonoBehaviour {
         Transform navMeshMask = Instantiate(navMeshMaskPrefab, position, Quaternion.identity) as Transform;
         navMeshMask.parent = objectPool;
         navMeshMask.localScale = localScale;
-    }
-    
-    Vector3 CoordToVector3(Coord coord)
-    {
-        return new Vector3(-map.width / 2f + 0.5f + coord.x, 0, -map.height / 2f + 0.5f + coord.y) * tileSize;
     }
 
     Coord Vector3ToCoord(Vector3 vector3)
