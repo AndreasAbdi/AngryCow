@@ -15178,8 +15178,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   waves:
   - timeBetweenSpawns: 0.5
-    numberOfEnemies: 0
+    numberOfEnemies: 5
     infiniteWave: 0
+  - timeBetweenSpawns: 1
+    numberOfEnemies: 5
+    infiniteWave: 0
+  - timeBetweenSpawns: 0.5
+    numberOfEnemies: 5
+    infiniteWave: 1
   seed: 1231232
   enemy: {fileID: 4465855188568700, guid: 265d5464aedfce9428cf2085c84efc4d, type: 2}
   mapGenerator: {fileID: 1450940460}

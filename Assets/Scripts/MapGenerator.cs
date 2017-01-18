@@ -4,56 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-[System.Serializable]
-public class Map
-{
-    [Range(1,100)]
-    public int height;
-    [Range(1, 100)]
-    public int width;
-
-    [Range(0, 1)]
-    public float outlineSize;
-
-    [Range(0, 1)]
-    public float obstaclePercent;
-
-    public float minObstacleHeight;
-    public float maxObstacleHeight;
-    public Color foregroundColor;
-    public Color backgroundColor;
-
-    public string seed;
-
-    [HideInInspector]
-    public Coord centerLocation;
-}
-
-[System.Serializable]
-public class Coord
-{
-    public int x;
-    public int y;
-
-    public Coord(int _x, int _y)
-    {
-        x = _x;
-        y = _y;
-    }
-
-    public static bool operator==(Coord c1, Coord c2)
-    {
-        return c1.x == c2.x && c1.y == c2.y;
-    }
-
-    public static bool operator!=(Coord c1, Coord c2)
-    {
-        return !(c1 == c2);
-    }
-}
-
 public class MapGenerator : MonoBehaviour {
-    public Map[] maps;
+    public GameMap[] maps;
     public int currentMapIndex;
     [Range(0.001f, 100)]
     public float tileSize;
@@ -68,11 +20,10 @@ public class MapGenerator : MonoBehaviour {
     public Transform navMeshFloor;
     public Transform navMeshMaskPrefab;
 
-
     //for the ground
     public BoxCollider floor;
 
-    Map map;
+    GameMap map;
     //obstacles are 00 at top left, and nn at bottom right
     bool[,] obstacleMap;
 

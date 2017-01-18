@@ -92,7 +92,7 @@ public class SpawnEnemy : MonoBehaviour {
 
     void SpawnEnemyAtRandomPointOnMap()
     {
-        Map currentMap = mapGenerator.maps[mapGenerator.currentMapIndex];
+        GameMap currentMap = mapGenerator.maps[mapGenerator.currentMapIndex];
         Coord targetPosition = null;
 
         do
